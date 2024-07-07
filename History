@@ -1,0 +1,336 @@
+root@ip-10-26-26-166:~/kubernetes# history
+    1  swapoff -a
+    2  sed -i '/ swap / s/^/#/' /etc/fstab
+    3  cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+    4  overlay
+    5  br_netfilter
+    6  EOF
+    7  sudo modprobe overlay
+    8  sudo modprobe br_netfilter
+    9  cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+   10  net.bridge.bridge-nf-call-iptables  = 1
+   11  net.bridge.bridge-nf-call-ip6tables = 1
+   12  net.ipv4.ip_forward                 = 1
+   13  EOF
+   14  sudo sysctl --system
+   15  for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+   16  # Add Docker's official GPG key:
+   17  sudo apt-get update
+   18  sudo apt-get install ca-certificates curl
+   19  sudo install -m 0755 -d /etc/apt/keyrings
+   20  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+   21  sudo chmod a+r /etc/apt/keyrings/docker.asc
+   22  # Add the repository to Apt sources:
+   23  echo   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+   24    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   25  sudo apt-get update
+   26  sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+   27  sudo sh -c "containerd config default > /etc/containerd/config.toml"
+   28  sudo sed -i 's/ SystemdCgroup = false/ SystemdCgroup = true/' /etc/containerd/config.toml
+   29  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+   30  sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg # allow unprivileged APT programs to read this keyring
+   31  sudo apt-get update
+   32  sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+   33  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+   34  echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+   35  sudo apt-get update
+   36  sudo apt-get install -y kubelet kubeadm kubectl
+   37  sudo apt-mark hold kubelet kubeadm kubectl
+   38  systemctl restart containerd.service
+   39  kubeadm join 10.26.26.195:6443 --token pnjk0m.z5c74wwkbh1n8hck         --discovery-token-ca-cert-hash sha256:4b33386fc9206b16b6aa73cec17c9d78632a8949e42aad6b59013160f2501e00
+   40  sudo mkdir /etc/docker      #no need to create dirctory
+   41  cat <<EOF | sudo tee /etc/docker/daemon.json
+   42  {
+   43    "exec-opts": ["native.cgroupdriver=systemd"],
+   44    "log-driver": "json-file",
+   45    "log-opts": {
+   46      "max-size": "100m"
+   47    },
+   48    "storage-driver": "overlay2"
+   49  }
+   50  EOF
+   51  cat <<EOF | sudo tee /etc/docker/daemon.json
+   52  > {
+   53  >   "exec-opts": ["native.cgroupdriver=systemd"],
+   54  >   "log-driver": "json-file",
+   55  >   "log-opts": {
+   56  >     "max-size": "100m"
+   57  >   },
+   58  >   "storage-driver": "overlay2"
+   59  > }
+   60  > EOF
+   61  ------------------------------output-------------------
+   62  {
+   63    "exec-opts": ["native.cgroupdriver=systemd"],
+   64    "log-driver": "json-file",
+   65    "log-opts": {
+   66      "max-size": "100m"
+   67    },
+   68    "storage-driver": "overlay2"
+   69  }
+   70  cat <<EOF | sudo tee /etc/docker/daemon.json
+   71  > {
+   72  >   "exec-opts": ["native.cgroupdriver=systemd"],
+   73  >   "log-driver": "json-file",
+   74  >   "log-opts": {
+   75  >     "max-size": "100m"
+   76  >   },
+   77  >   "storage-driver": "overlay2"
+   78  > }
+   79  > EOF
+   80  cat <<EOF | sudo tee /etc/docker/daemon.json
+   81  > {
+   82  >   "exec-opts": ["native.cgroupdriver=systemd"],
+   83  >   "log-driver": "json-file",
+   84  >   "log-opts": {
+   85  >     "max-size": "100m"
+   86  >   },
+   87  >   "storage-driver": "overlay2"
+   88  > }
+   89  > EOF
+   90  cat <<EOF | sudo tee /etc/docker/daemon.json
+   91  > {
+   92  >   "exec-opts": ["native.cgroupdriver=systemd"],
+   93  >   "log-driver": "json-file",
+   94  >   "log-opts": {
+   95  >     "max-size": "100m"
+   96  >   },
+   97  >   "storage-driver": "overlay2"
+   98  > }
+   99  > EOF
+  100  sudo apt-get update
+  101  sudo apt-get install -y apt-transport-https ca-certificates curl
+  102  sudo apt-mark hold kubelet kubeadm kubectl
+  103  curl https://docs.projectcalico.org/manifests/calico.yaml -O
+  104  sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+  105  sudo kubeadm reset
+  106  sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+  107  mkdir -p $HOME/.kube
+  108  kubectl apply -f calico.yaml
+  109  curl https://docs.projectcalico.org/manifests/calico.yaml -O
+  110  ls -ltr
+  111  kubectl apply -f calico.yaml
+  112  kubectl apply -f calico.yaml --validate=false
+  113  kubectl get pods
+  114  kubectl get pods -A
+  115  ls -ltr
+  116  cat calico.yaml
+  117  curl -v https://calico-v3-25.netlify.app/archive/v3.25/manifests/calico.yaml
+  118  cutl -l https://calico-v3-25.netlify.app/archive/v3.25/manifests/calico.yaml
+  119  curl https://calico-v3-25.netlify.app/archive/v3.25/manifests/calico.yaml -O
+  120  ls -ltr
+  121  cat calico.yaml
+  122  kubectl apply -f calico.yaml
+  123  kubectl get pods -A
+  124  sudo mkdir /mnt/data
+  125  sudo sh -c "echo 'Hello from Kubernetes storage' > /mnt/data/index.html"
+  126  cat /mnt/data/index.html
+  127  vim PV.yaml
+  128  vim PVC.yaml
+  129  vim PVCP.yaml
+  130  kubctl apply -f PV.yaml
+  131  kubectl apply -f PV.yaml
+  132  kubectl apply -f PVC.yaml
+  133  kubectl apply -f PVCP.yaml
+  134  kubectl get pod
+  135  kubectl describe pod task-pv-pod
+  136  kubectl get nodes
+  137  kubectl get pod
+  138  kubectl delete calico.yaml
+  139  kubectl delete -f calico.yaml
+  140  kubeadm reset
+  141  sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+  142  mkdir -p $HOME/.kube
+  143  rm -rf  $HOME/.kube/config
+  144  mkdir -p $HOME/.kube
+  145  kudectl get pods
+  146  kubectl get pods
+  147  kubectl get nodes
+  148  kudectl get pods -A
+  149  kubectl get pods -A
+  150  kubectl apply -f calico.yaml
+  151  kubectl get pods -A
+  152  kubectl apply -f calico.yaml
+  153  kubectl get pods -A
+  154  kubectl get pv
+  155  kubectl get pods -A
+  156  kubctl apply -f PV.yaml
+  157  kubectl apply -f PV.yaml
+  158  kubectl apply -f PVC.yaml
+  159  kubectl apply -f PVCP.yaml
+  160  kubectl get pods -A
+  161  kubectl exec -it task-pv-pod -- /bin/bash
+  162  hisroty
+  163  history
+  164  kubectl get pods -A
+  165  kubectl get pv
+  166  kubectl get pc
+  167  kubectl get pvc
+  168  kubectl get pd
+  169  kubectl get pod
+  170  ls -ltr
+  171  cat PVCP.yaml
+  172  apiVersion: apps/v1
+  173  kind: Deployment
+  174  metadata:
+  175  spec:
+  176  ls -ltr
+  177  cat PVCP.yaml
+  178  cp PVCP.yaml pvcp
+  179  ls
+  180  cp PVCP.yaml pvcp.yaml_bkp
+  181  vim PVCP.yaml
+  182  kubelet delete pod
+  183  kubelet get pod
+  184  kubelet get pods
+  185  ls -ltr
+  186  kubectl get pod
+  187  kubectl delete pod task-pv-pod
+  188  kubectl apply -f
+  189  kubectl apply -f PVCP.yaml
+  190  kubelet delete pc
+  191  kubectl get pvc
+  192  kubectl get pv
+  193  kubelet delete pvc task-pv-claim
+  194  kubectl delete pvc task-pv-claim
+  195  kubectl delete pvc task-pv-volume
+  196  kubectl delete pv task-pv-volume
+  197  vim deploy.yaml
+  198  kubectl apply -f deploy.yaml
+  199  kubelet delete pod
+  200  kubectl get pod
+  201  kubectl get nodes
+  202  kubectl get deployments
+  203  kubectl rollout status deployment/nginx-deployment.
+  204  kubectl rollout status nginx-deployment.
+  205  kubectl rollout status nginx-deployment
+  206  ls
+  207  kubectl rollout status deploy .
+  208  kubectl rollout status deploy.
+  209  kubectl get pod
+  210  kubectl get deployments
+  211  kubectl get rs
+  212  kubectl get pods --show-labels
+  213  kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1
+  214  kubectl rollout status deployment
+  215  kubectl get deployments
+  216  kubectl get pods
+  217  kubectl describe deployments
+  218  kubectl set image deployment/nginx-deployment nginx=nginx:1.161
+  219  deployment.apps/nginx-deployment image updated
+  220  kubectl rollout status deployment/nginx-deployment
+  221  kubectl get rs
+  222  kubectl get pods
+  223  kubectl describe deployment
+  224  kubectl rollout history deployment
+  225  kubectl rollout history deployment/nginx-deployment
+  226  kubectl rollout history nginx-deployment
+  227  kubectl rollout history deployment/nginx-deployment
+  228  kubectl rollout history deployment/nginx-deployment --revision=2
+  229  kubectl rollout undo deployment/nginx-deployment
+  230  kubectl rollout undo deployment/nginx-deployment --to-revision=2
+  231  kubectl get deployment nginx-deployment
+  232  kubectl describe deployment nginx-deployment
+  233  kubectl scale deployment/nginx-deployment --replicas=6
+  234  kubectl autoscale deployment/nginx-deployment --min=10 --max=15 --cpu-percent=80
+  235  kubectl get deploy
+  236  kubectl set image deployment nginx=nginx:sometag
+  237  kubectl set image deployment/nginx-deployment nginx=nginx:sometag
+  238  kubectl get rs
+  239  kubectl get deploy
+  240  kubectl get rs
+  241  kubectl get deploy
+  242  kubectl rollout pause deployment/nginx-deployment
+  243  kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1
+  244  kubectl rollout history deployment/nginx-deployment
+  245  kubectl get rs
+  246  kubectl set resources deployment/nginx-deployment -c=nginx --limits=cpu=200m,memory=512M
+  247  kubectl rollout resume deployment/nginx-deployment
+  248  kubectl get rs -w
+  249  kubectl get rs
+  250  kubectl rollout status deployment/nginx-deployment
+  251  kubectl  get rs
+  252  kubectl describe deployment nginx-deployment
+  253  kubectl get pods
+  254  kubectl delete pods nginx-deployment*
+  255  kubectl delete pod nginx-deployment-56df7ff58b-448x6
+  256  kubectl delete po
+  257  kubectl delete pod
+  258  kubectl delete pod nginx-deployment-56df7ff58b-9sv9l
+  259  kubectl delete pod nginx-deployment-56df7ff58b-h6msh
+  260  kubectl get pods
+  261  kubectl delete deployments deployment/nginx-deployment
+  262  kubectl delete deployment deployment/nginx-deployment
+  263  kubectl get pods
+  264  kubectl get deployments
+  265  kubectl delete deployments nginx-deployment
+  266  kubectl get pods
+  267  kubectl get pods -A
+  268  vim service.yaml
+  269  ls -ltr
+  270  cat deploy.yaml
+  271  kubectl create -f service.yaml
+  272  kubectl create -f deploy.yaml
+  273  kubectl get pods
+  274  kubectl get rs
+  275  cat service.yaml
+  276  vim service.yaml
+  277  kubectl delete deployments nginx-deployment
+  278  kubectl get service
+  279  kubectl delete service my-service
+  280  kubectl get namespace
+  281  vim service.yaml
+  282  vim namespace.yaml
+  283  kubectl create -f namespace.yaml
+  284  vim namespace.yaml
+  285  kubectl create -f namespace.yaml
+  286  vim namespace.yaml
+  287  kubectl create -f namespace.yaml
+  288  kubectl get namespace
+  289  vim deploy.yaml
+  290  kubectl create -f deploy.yaml
+  291  kubectl get all -n deployment-demo
+  292  vim service.yaml
+  293  kubectl get all -n deployment-demo
+  294  kubectl create -f service.yaml
+  295  vim service.yaml
+  296  kubectl create -f service.yaml
+  297  vim service.yaml
+  298  kubectl create -f service.yaml
+  299  vim service.yaml
+  300  cat service.yaml
+  301  kubectl create -f service.yaml
+  302  vim service.yaml
+  303  kubectl create -f service.yaml
+  304  kubectl get all -n deployment-demo
+  305  kubectl get all -n deployment-demo - wide
+  306  kubectl get all -n deployment-demo -o wide
+  307  ls -ltr
+  308  apt-get install git
+  309  git init
+  310  git commit -m "first commit"
+  311  ls -ltr
+  312  mkdir kubernetes
+  313  cp * /root/kubernetes/
+  314  cp * /root/kubernetes/ls
+  315  cp * /root/kubernetes/
+  316  cp -rf * /root/kubernetes/
+  317  ls -ltr
+  318  cd kubernetes
+  319  ls -ltr
+  320  rm -rf kubernetes
+  321  ls -ltr
+  322  rm -rf snap
+  323  git init
+  324  git commit -m "first commit"
+  325  git add PV.yaml
+  326  git add PVC.yaml PVCP.yaml calico.yaml deploy.yaml namespace.yaml pvcp  pvcp.yaml_bkp service.yaml
+  327  git commit -m "first commit"
+  328  git remote add origin https://github.com/satyadarling/Kubernetes.git
+  329  git push -u origin main
+  330  git branch
+  331  git checkout -b main
+  332  git push -u origin main
+  333  git remote add origin https://github.com/satyadarling/Kubernetes.git
+  334  history
+root@ip-10-26-26-166:~/kubernetes#
