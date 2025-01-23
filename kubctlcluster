@@ -1,0 +1,147 @@
+teps to Install Kubernetes on Ubuntu
+Prerequisites
+Ensure the system has at least:
+2 CPUs
+2GB of RAM
+2GB of disk space
+A reliable internet connection.
+Step 1: Disable Swap
+Disable swap temporarily:
+bash
+Copy
+Edit
+sudo swapoff -a
+Prevent swap from being re-enabled after reboot:
+bash
+Copy
+Edit
+sudo sed -i '/ swap / s/^/#/' /etc/fstab
+Step 2: Set up Hostnames
+On the master node, set hostname:
+bash
+Copy
+Edit
+sudo hostnamectl set-hostname "master-node"
+exec bash
+On the worker nodes, set their respective hostnames:
+bash
+Copy
+Edit
+sudo hostnamectl set-hostname "worker-node1"
+exec bash
+Step 3: Update the /etc/hosts File
+Add the IP addresses and hostnames of all nodes to the /etc/hosts file:
+bash
+Copy
+Edit
+sudo nano /etc/hosts
+Example:
+Copy
+Edit
+10.0.0.2 master-node  
+10.0.0.3 worker-node1
+Step 4: Set up the IPv4 Bridge
+Load kernel modules:
+bash
+Copy
+Edit
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+sudo modprobe overlay
+sudo modprobe br_netfilter
+Configure sysctl parameters:
+bash
+Copy
+Edit
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+Apply sysctl changes:
+bash
+Copy
+Edit
+sudo sysctl --system
+Step 5: Install Docker
+Remove any conflicting packages:
+bash
+Copy
+Edit
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+Set up Docker's repository:
+bash
+Copy
+Edit
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+Install Docker:
+bash
+Copy
+Edit
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+Configure Docker:
+bash
+Copy
+Edit
+sudo sed -i 's/ SystemdCgroup = false/ SystemdCgroup = true/' /etc/containerd/config.toml
+Step 6: Install kubeadm, kubectl, and kubelet
+Add Kubernetes’ repository:
+bash
+Copy
+Edit
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+Install Kubernetes components:
+bash
+Copy
+Edit
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+Enable kubelet service:
+bash
+Copy
+Edit
+sudo systemctl enable --now kubelet
+Step 7: Restart kubelet and container runtime
+Restart services:
+bash
+Copy
+Edit
+sudo systemctl restart kubelet
+sudo systemctl restart containerd
+Step 8: Set up the Kubernetes Cluster
+Follow the official Kubernetes 
+
+  1  sudo containerd config default > /etc/containerd/config.toml
+    2  vi /etc/containerd/config.toml
+    3  sudo service containerd restart
+    4  sudo curl -fsSLo /etc/apt/keyrings/kubernetes.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    5  echo "deb [signed-by=/etc/apt/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    6  sudo apt update
+    7  sudo apt install -y kubeadm kubectl kubelet
+    8  sudo apt-mark hold kubeadm kubectl kubelet
+    9  sudo modprobe br_netfilter
+   10  echo br_netfilter | sudo tee /etc/modules-load.d/kubernetes.conf
+   11  sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+   12  mkdir -p $HOME/.kube
+   13  kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+   14  kubectl get nodes
+   15  kubectl get pods --all-namespaces
+   16  top
+   17  kubectl get nodes
+   18  history
